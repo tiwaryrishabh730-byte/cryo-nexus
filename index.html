@@ -2,8 +2,6 @@
 // ║  CRYO-NEXUS  ·  Intelligent Cold-Chain OS  ·  v4.0                     ║
 // ║  B2B Supplier–Client Platform: Pfizer (Supplier) ↔ Moderna (Client)    ║
 // ╚══════════════════════════════════════════════════════════════════════════╝
-// Stack: React · Recharts · Inline SVG Icons · Tailwind CSS
-// FIX v2: lucide-react FULLY REMOVED — replaced with zero-dependency inline SVGs
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -18,10 +16,6 @@
 <body class="bg-slate-950">
     <div id="root"></div>
     <script type="text/babel">
-
-import { useState, useEffect, useRef, useMemo, useCallback } from "react";
-import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
-
 // ─── §0  INLINE SVG ICON COMPONENTS (zero external dependency) ───────────────
 function SvgIcon({ paths, size = 16, color, style, className, sw = 2 }) {
   return (
