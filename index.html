@@ -4,6 +4,20 @@
 // ╚══════════════════════════════════════════════════════════════════════════╝
 // Stack: React · Recharts · Inline SVG Icons · Tailwind CSS
 // FIX v2: lucide-react FULLY REMOVED — replaced with zero-dependency inline SVGs
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cryo-Nexus | Pfizer-Moderna Logistics</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950">
+    <div id="root"></div>
+    <script type="text/babel">
 
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
@@ -1933,3 +1947,8 @@ export default function CryoNexus() {
     </div>
   );
 }
+const root = ReactDOM.createRoot(document.getElementById('root'));
+      root.render(<App />);
+    </script>
+</body>
+</html>
