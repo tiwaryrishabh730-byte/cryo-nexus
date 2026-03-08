@@ -1,0 +1,1935 @@
+// ╔══════════════════════════════════════════════════════════════════════════╗
+// ║  CRYO-NEXUS  ·  Intelligent Cold-Chain OS  ·  v4.0                     ║
+// ║  B2B Supplier–Client Platform: Pfizer (Supplier) ↔ Moderna (Client)    ║
+// ╚══════════════════════════════════════════════════════════════════════════╝
+// Stack: React · Recharts · Inline SVG Icons · Tailwind CSS
+// FIX v2: lucide-react FULLY REMOVED — replaced with zero-dependency inline SVGs
+
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
+import { LineChart, Line, XAxis, YAxis, ReferenceLine, ResponsiveContainer, Tooltip } from "recharts";
+
+// ─── §0  INLINE SVG ICON COMPONENTS (zero external dependency) ───────────────
+function SvgIcon({ paths, size = 16, color, style, className, sw = 2 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none"
+      stroke={color || "currentColor"} strokeWidth={sw}
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ display: "inline-block", flexShrink: 0, ...style }}
+      className={className}>
+      {(Array.isArray(paths) ? paths : [paths]).map((d, i) => <path key={i} d={d} />)}
+    </svg>
+  );
+}
+
+const Snowflake     = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M12 2v20","M2 12h20","M12 2l3.5 3.5L12 9 8.5 5.5z","M12 22l3.5-3.5L12 15l-3.5 3.5z","M2 12l3.5-3.5L9 12l-3.5 3.5z","M22 12l-3.5-3.5L15 12l3.5 3.5z"]} />;
+const AlertTriangle = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z","M12 9v4","M12 17h.01"]} />;
+const CheckCircle   = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M22 11.08V12a10 10 0 11-5.93-9.14","M22 4L12 14.01l-3-3"]} />;
+const Shield        = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"]} />;
+const FileText      = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z","M14 2v6h6","M16 13H8","M16 17H8","M10 9H8"]} />;
+const LogOut        = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4","M16 17l5-5-5-5","M21 12H9"]} />;
+const Thermometer   = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M14 14.76V3.5a2.5 2.5 0 00-5 0v11.26a4.5 4.5 0 105 0z"]} />;
+const Truck         = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M1 3h15v13H1z","M16 8h4l3 3v5h-7V8z","M5.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z","M18.5 21a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"]} />;
+const Lock          = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z","M7 11V7a5 5 0 0110 0v4"]} />;
+const Globe         = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M12 2a10 10 0 100 20A10 10 0 0012 2z","M2 12h20","M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"]} />;
+const Radio         = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M12 12m-2 0a2 2 0 104 0 2 2 0 10-4 0","M16.24 7.76a6 6 0 010 8.49","M7.76 7.76a6 6 0 000 8.49","M20.07 4.93a10 10 0 010 14.14","M3.93 4.93a10 10 0 000 14.14"]} />;
+const Eye           = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z","M12 12m-3 0a3 3 0 106 0 3 3 0 10-6 0"]} />;
+const Clock         = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M12 2a10 10 0 100 20A10 10 0 0012 2z","M12 6v6l4 2"]} />;
+const Navigation    = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M3 11l19-9-9 19-2-8-8-2z"]} />;
+const Package       = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M16.5 9.4l-9-5.19","M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 002 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z","M3.27 6.96L12 12.01l8.73-5.05","M12 22.08V12"]} />;
+const Activity      = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M22 12h-4l-3 9L9 3l-3 9H2"]} />;
+const Wifi          = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M5 12.55a11 11 0 0114.08 0","M1.42 9a16 16 0 0121.16 0","M8.53 16.11a6 6 0 016.95 0","M12 20h.01"]} />;
+const Zap           = ({ size, color, style, className }) => <SvgIcon size={size} color={color} style={style} className={className} paths={["M13 2L3 14h9l-1 8 10-12h-9l1-8z"]} />;
+
+// ─── §1  TOKENS ──────────────────────────────────────────────────────────────
+const C = {
+  bg:      "#05080f",
+  surface: "#0b0f1a",
+  panel:   "#0e1420",
+  border:  "#1a2235",
+  cyan:    "#22d3ee",
+  emerald: "#34d399",
+  amber:   "#f59e0b",
+  red:     "#f87171",
+  green:   "#22c55e",
+  gold:    "#f5c842",
+  muted:   "#4a5f7a",
+  dim:     "#1e2d44",
+};
+
+// ─── §2  HOLD REASON REGISTRY ────────────────────────────────────────────────
+const HOLD_DB = {
+  COMPRESSOR_FAILURE: {
+    tag: "Compressor Failure", icon: "🌡",
+    admin:  "Reefer unit compressor failure at Port of Dublin. Temperature excursion active — re-cooling in progress. Technician on-site (ETA 2 h). All sensor logs preserved.",
+    client: "Stability Protocol: Extra Cooling Cycle — Pre-shipment thermal verification to protect product integrity.",
+  },
+  CUSTOMS_HOLD: {
+    tag: "Customs Clearance", icon: "🛃",
+    admin:  "Irish Revenue hold at DUB Airport. HS code re-classification dispute (3004.90 vs 3004.20). Legal team engaged — re-submission filed 08:42 UTC.",
+    client: "Regulatory Documentation Review — Routine import compliance check. No impact to product integrity.",
+  },
+  CARRIER_DELAY: {
+    tag: "Carrier Delay", icon: "🚚",
+    admin:  "DHL Express ground-stop at FRA (adverse weather). FedEx Priority contingency activated. Delay: +6 h.",
+    client: "Logistics Scheduling Adjustment — Product safely staged; updated ETA being coordinated.",
+  },
+  REGULATORY_REVIEW: {
+    tag: "Regulatory Review", icon: "📋",
+    admin:  "Destination MoH flagged import dossier; batch CoA re-issuance required. QA team acting — resolution: 24–48 h.",
+    client: "Compliance Verification — Standard destination-country regulatory review in progress.",
+  },
+};
+
+function getHoldMsg(code, view) {
+  const e = HOLD_DB[code];
+  if (!e) return { tag: "Logistics Hold", icon: "⚠", body: view === "admin"
+    ? "No reason code logged. Update via Admin console."
+    : "Routine logistics protocol. Our team is managing this." };
+  return { tag: e.tag, icon: e.icon, body: view === "admin" ? e.admin : e.client };
+}
+
+// ─── §3  ROUTE SCORING ENGINE ─────────────────────────────────────────────────
+// Vaccine  → Thermal 0.70, Cost 0.10  → forces Air
+// Tablet   → Cost   0.60, Speed 0.30  → forces Sea / Rail
+const ROUTES = [
+  { mode: "Air",  emoji: "✈",  cost: 9200, speed: 95, thermal: 8  },
+  { mode: "Sea",  emoji: "🚢", cost: 2100, speed: 28, thermal: 72 },
+  { mode: "Rail", emoji: "🚂", cost: 4400, speed: 58, thermal: 35 },
+];
+
+function cargoProfile(cargo = "") {
+  const s = cargo.toLowerCase();
+  if (s.match(/vaccine|mrna|bnt|nanoparticle|lipid|booster/))
+    return { type: "vaccine", label: "mRNA / Vaccine Profile", accent: C.red,
+             wCost: 0.10, wSpeed: 0.20, wThermal: 0.70 };
+  if (s.match(/tablet|capsule|paxlovid|nirmatrelvir|api/))
+    return { type: "tablet",  label: "Tablet / API Profile",   accent: C.emerald,
+             wCost: 0.60, wSpeed: 0.30, wThermal: 0.05 };
+  return   { type: "standard",label: "Standard Profile",       accent: C.cyan,
+             wCost: 0.15, wSpeed: 0.45, wThermal: 0.20 };
+}
+
+function score(r, p) {
+  return -(r.cost * p.wCost * 0.0001)
+         + (r.speed * p.wSpeed * 0.01)
+         - (r.thermal * p.wThermal * 0.01);
+}
+
+// Golden Path auto-selector: returns the best transport mode for a cargo string
+function goldenMode(cargo) {
+  const p = cargoProfile(cargo);
+  return ROUTES.map(r => ({ ...r, s: score(r, p) })).reduce((a, b) => a.s > b.s ? a : b).mode;
+}
+
+// ─── §3b  ORDER CATALOG ───────────────────────────────────────────────────────
+const PRODUCTS = [
+  { id: "VAC-ULTRA", label: "BNT162b2 Vaccine (Ultra-Cold)", type: "vaccine", emoji: "🧬", minT: -80, maxT: -60, desc: "mRNA ultra-cold chain · −80°C to −60°C" },
+  { id: "VAC-STD",   label: "mRNA-1273 Bulk Drug Substance", type: "vaccine", emoji: "💉", minT: 2,   maxT: 8,   desc: "Refrigerated mRNA · 2°C to 8°C" },
+  { id: "TAB-PAX",   label: "Paxlovid API (Nirmatrelvir)",   type: "tablet",  emoji: "💊", minT: 2,   maxT: 8,   desc: "Oral antiviral API · 2°C to 8°C" },
+  { id: "TAB-LNP",   label: "Lipid Nanoparticle Excipient",  type: "tablet",  emoji: "🔬", minT: 15,  maxT: 25,  desc: "LNP formulation · 15°C to 25°C" },
+];
+
+const DESTINATIONS = [
+  { label: "Cambridge, MA",  lat: 42.36,  lng: -71.10, origin: "Kalamazoo, USA"  },
+  { label: "Tokyo, JP",      lat: 35.68,  lng: 139.69, origin: "Ringaskiddy, IE" },
+  { label: "Sydney, AU",     lat: -33.87, lng: 151.21, origin: "Puurs, BE"        },
+  { label: "Selangor, MY",   lat: 3.07,   lng: 101.50, origin: "Dublin, IE"       },
+  { label: "Berlin, DE",     lat: 52.52,  lng: 13.40,  origin: "Groton, CT"       },
+  { label: "São Paulo, BR",  lat: -23.55, lng: -46.63, origin: "Kalamazoo, USA"  },
+];
+
+let _orderSeq = 7750;
+function nextOrderId() { return `MDR-${++_orderSeq}`; }
+
+// ─── §4  SEED DATA ───────────────────────────────────────────────────────────
+const EMERGENCY_HUBS = [
+  { name: "Frankfurt CryoHub Alpha",  eta: "38 min" },
+  { name: "Singapore Cold Depot 7",   eta: "22 min" },
+  { name: "Chicago BioVault East",    eta: "55 min" },
+  { name: "Dubai FreezePlex III",     eta: "31 min" },
+];
+
+const SEEDS = [
+  {
+    id: "PFZ-7741", cargo: "BNT162b2 Vaccine (Ultra-Cold)",
+    origin: "Kalamazoo, USA", dest: "Cambridge, MA",
+    mode: "Air", minT: -80, maxT: -60, lat: 42.36, lng: -71.10,
+    status: "In Transit", eta: "4h 22m",
+    tenant: "moderna", holdCode: null, signedOff: null, deliveredAt: null,
+  },
+  {
+    id: "PFZ-7742", cargo: "mRNA-1273 Bulk Drug Substance",
+    origin: "Groton, CT", dest: "Norwood, MA",
+    mode: "Rail", minT: 2, maxT: 8, lat: 42.19, lng: -71.20,
+    status: "In Transit", eta: "11h 05m",
+    tenant: "moderna", holdCode: null, signedOff: null, deliveredAt: null,
+  },
+  {
+    id: "PFZ-7743", cargo: "Lipid Nanoparticle Excipient",
+    origin: "Dublin, IE", dest: "Selangor, MY",
+    mode: "Sea", minT: 15, maxT: 25, lat: 3.07, lng: 101.50,
+    status: "On Hold", eta: "32h 10m",
+    tenant: "moderna", holdCode: "COMPRESSOR_FAILURE", signedOff: null, deliveredAt: null,
+  },
+  {
+    id: "PFZ-7744", cargo: "BNT162b2 Finished Doses",
+    origin: "Puurs, BE", dest: "Sydney, AU",
+    mode: "Air", minT: -80, maxT: -60, lat: -33.87, lng: 151.21,
+    status: "Delivered", eta: "—",
+    tenant: "moderna", holdCode: null,
+    signedOff: { by: "Mysha Raza", at: "2025-03-06 09:18 UTC" },
+    deliveredAt: "2025-03-06 09:18 UTC",
+  },
+  {
+    id: "PFZ-7745", cargo: "Paxlovid API (Nirmatrelvir)",
+    origin: "Ringaskiddy, IE", dest: "Tokyo, JP",
+    mode: "Air", minT: 2, maxT: 8, lat: 35.68, lng: 139.69,
+    status: "On Hold", eta: "6h 55m",
+    tenant: "pfizer", holdCode: "CUSTOMS_HOLD", signedOff: null, deliveredAt: null,
+  },
+];
+
+// ─── §5  AUTH PROFILES ───────────────────────────────────────────────────────
+const PROFILES = [
+  {
+    id: "pfizer-admin",   tenant: "pfizer",  role: "Admin",
+    label: "Pfizer — Admin", sub: "Mysha Raza · Supply Chain Director",
+    accent: C.cyan, badge: "PFZ",
+    desc: "Full access: crisis simulation, compliance sign-off, global IoT command.",
+  },
+  {
+    id: "pfizer-op",      tenant: "pfizer",  role: "Operator",
+    label: "Pfizer — Operator", sub: "Field Logistics Operator",
+    accent: C.cyan, badge: "PFZ",
+    desc: "Ops access: crisis management, rerouting. No sign-off authority.",
+  },
+  {
+    id: "moderna-viewer", tenant: "moderna", role: "Viewer",
+    label: "Moderna — Client Portal", sub: "Procurement & QA Team",
+    accent: C.emerald, badge: "MDR",
+    desc: "Client view: shipment tracking and compliance documents only.",
+  },
+];
+
+// ─── §6  HELPERS ─────────────────────────────────────────────────────────────
+const isActive  = s => s.status === "In Transit" || s.status === "On Hold";
+const isDone    = s => s.status === "Delivered"  || s.status === "Completed";
+const isPending = s => s.status === "Pending Approval";
+
+// ─── §6b  HELPERS (defined before _store so _ensureGraphs can call them) ──────
+const ts = () => new Date().toLocaleTimeString("en-GB", { hour12: false });
+
+function normalTick(min, max) {
+  const mid = (min + max) / 2, j = (max - min) * 0.18;
+  return +((mid + (Math.random() - 0.5) * j).toFixed(2));
+}
+function crisisTick(min, max) {
+  return +((max + (max - min) * (0.55 + Math.random() * 0.55)).toFixed(2));
+}
+function buildHistory(min, max) {
+  return Array.from({ length: 20 }, (_, i) => ({ t: i - 19, v: normalTick(min, max) }));
+}
+function fakeHash(seed) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = (Math.imul(h, 0x01000193) | 0); }
+  const x = (Math.abs(h) >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  return [x, x.split("").reverse().join(""), x.replace(/[A-F]/g, c => c.charCodeAt(0).toString(16)), x]
+    .join("").padEnd(64, "0").slice(0, 64);
+}
+
+// ─── MODULE-LEVEL SHARED STORE ────────────────────────────────────────────────
+// Lazy-initialized so it never runs at parse/hoist time — avoids TDZ issues.
+// Persists across login/logout cycles. Moderna orders land here; Pfizer reads them.
+let _store = null;
+function getStore() {
+  if (!_store) {
+    _store = {
+      ships:  SEEDS.map(s => ({ ...s })),
+      graphs: {},
+      audit:  [],
+    };
+    // Pre-build telemetry history for seed shipments
+    _store.ships.forEach(s => {
+      _store.graphs[s.id] = buildHistory(s.minT, s.maxT);
+    });
+  }
+  return _store;
+}
+function _ensureGraphs() {
+  const store = getStore();
+  store.ships.forEach(s => {
+    if (!store.graphs[s.id])
+      store.graphs[s.id] = buildHistory(s.minT, s.maxT);
+  });
+}
+function fakeHash(seed) {
+  let h = 0x811c9dc5;
+  for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = (Math.imul(h, 0x01000193) | 0); }
+  const x = (Math.abs(h) >>> 0).toString(16).toUpperCase().padStart(8, "0");
+  return [x, x.split("").reverse().join(""), x.replace(/[A-F]/g, c => c.charCodeAt(0).toString(16)), x]
+    .join("").padEnd(64, "0").slice(0, 64);
+}
+
+// ─── §7  ATOMS ───────────────────────────────────────────────────────────────
+function Dot({ color = C.cyan, sz = 8 }) {
+  return (
+    <span className="relative inline-flex flex-shrink-0" style={{ width: sz, height: sz }}>
+      <span className="absolute inset-0 rounded-full animate-ping opacity-50" style={{ background: color }} />
+      <span className="absolute rounded-full" style={{ inset: 2, background: color }} />
+    </span>
+  );
+}
+
+function Chip({ label, color, xs }) {
+  return (
+    <span className="inline-flex items-center rounded font-bold border"
+      style={{ fontSize: xs ? 9 : 10, padding: xs ? "0 5px" : "1px 8px",
+               background: `${color}15`, color, borderColor: `${color}30` }}>
+      {label}
+    </span>
+  );
+}
+
+function Head({ label, accent = C.cyan, right }) {
+  return (
+    <div className="flex items-center justify-between pb-2 mb-3"
+      style={{ borderBottom: `1px solid ${C.border}` }}>
+      <span className="text-xs font-bold tracking-widest uppercase" style={{ color: accent }}>{label}</span>
+      {right}
+    </div>
+  );
+}
+
+function Cell({ k, v, color, span2, hi }) {
+  return (
+    <div className={`rounded-lg p-3${span2 ? " col-span-2" : ""}`}
+      style={{ background: C.panel, border: `1px solid ${hi || C.border}` }}>
+      <div style={{ color: C.muted, fontSize: 9, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.08em" }}>{k}</div>
+      <div className="text-xs font-bold leading-tight" style={{ color: color || "#e2e8f0" }}>{v}</div>
+    </div>
+  );
+}
+
+// ─── §8  THERMAL GRAPH ───────────────────────────────────────────────────────
+function Graph({ data, min, max, accent, crisis, gk }) {
+  const lc = crisis ? C.red : accent;
+  return (
+    <div key={gk} style={{ height: 148 }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={data} margin={{ top: 6, right: 6, left: -22, bottom: 0 }}>
+          <XAxis dataKey="t" tick={{ fill: "#334155", fontSize: 8 }} tickLine={false} axisLine={false} />
+          <YAxis tick={{ fill: "#334155", fontSize: 8 }} tickLine={false} axisLine={false} domain={["auto", "auto"]} />
+          <Tooltip
+            contentStyle={{ background: "#1e293b", border: `1px solid ${C.border}`, borderRadius: 6, fontSize: 10, fontFamily: "monospace" }}
+            labelStyle={{ color: "#64748b" }} itemStyle={{ color: lc }}
+            formatter={v => [`${v}°C`, "Temp"]} />
+          <ReferenceLine y={max} stroke={C.amber} strokeDasharray="3 3" strokeWidth={1}
+            label={{ value: "MAX", fill: C.amber, fontSize: 8, position: "insideTopRight" }} />
+          <ReferenceLine y={min} stroke={C.amber} strokeDasharray="3 3" strokeWidth={1}
+            label={{ value: "MIN", fill: C.amber, fontSize: 8, position: "insideBottomRight" }} />
+          <Line type="monotone" dataKey="v" stroke={lc} strokeWidth={2} dot={false} isAnimationActive={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  );
+}
+
+// ─── §9  WORLD MAP (SVG) ─────────────────────────────────────────────────────
+function WorldMap({ ships, selId, onSel, crisisId, accent }) {
+  const proj = (lat, lng) => ({ x: ((lng + 180) / 360) * 100, y: ((90 - lat) / 180) * 100 });
+  return (
+    <div className="relative rounded-xl overflow-hidden"
+      style={{ background: "#020509", height: 196, border: `1px solid ${C.border}` }}>
+      <svg className="absolute inset-0 w-full h-full opacity-[0.04]">
+        {[...Array(9)].map((_, i) => <line key={`v${i}`} x1={`${i * 12.5}%`} y1="0" x2={`${i * 12.5}%`} y2="100%" stroke={accent} strokeWidth="0.5" />)}
+        {[...Array(5)].map((_, i) => <line key={`h${i}`} x1="0" y1={`${i * 25}%`} x2="100%" y2={`${i * 25}%`} stroke={accent} strokeWidth="0.5" />)}
+      </svg>
+      <svg className="absolute inset-0 w-full h-full opacity-[0.12]" viewBox="0 0 100 50" preserveAspectRatio="none">
+        <path d="M18,12L22,10L28,11L30,15L27,20L22,21L18,18Z" fill={accent} />
+        <path d="M35,10L55,9L60,12L62,18L58,24L52,26L44,25L38,22L35,16Z" fill={accent} />
+        <path d="M57,10L74,8L82,12L85,18L80,28L74,30L65,28L58,22L55,15Z" fill={accent} />
+        <path d="M20,22L26,21L30,25L28,34L22,38L18,35L17,28Z" fill={accent} />
+        <path d="M37,26L45,25L50,30L48,40L42,43L36,40L35,32Z" fill={accent} />
+        <path d="M80,20L88,18L94,22L93,32L87,35L81,30Z" fill={accent} />
+      </svg>
+      {ships.map(s => {
+        const { x, y } = proj(s.lat, s.lng);
+        const cr = s.id === crisisId;
+        const col = cr ? C.red : isDone(s) ? C.dim : s.status === "On Hold" ? C.amber : accent;
+        return (
+          <div key={s.id} onClick={() => onSel(s.id)}
+            className="absolute cursor-pointer z-10"
+            style={{ left: `${x}%`, top: `${y}%`, transform: "translate(-50%,-50%)" }}>
+            <Dot color={col} sz={cr ? 12 : s.id === selId ? 10 : 7} />
+            {s.id === selId && (
+              <div className="absolute whitespace-nowrap rounded px-1.5 py-0.5"
+                style={{ top: -20, left: 10, background: C.panel, color: accent, border: `1px solid ${accent}`, fontSize: 8 }}>
+                {s.id}
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <div className="absolute bottom-1.5 left-2 font-mono" style={{ color: "#1e3a5f", fontSize: 8 }}>
+        GLOBAL IoT SENSOR MAP — LIVE
+      </div>
+    </div>
+  );
+}
+
+// ─── §10  CRISIS OVERLAY ─────────────────────────────────────────────────────
+function CrisisOverlay({ ship, hub, onResolve }) {
+  return (
+    <div className="absolute inset-0 z-40 flex items-center justify-center"
+      style={{ background: "#05080fee", animation: "cn-fade .2s ease" }}>
+      <div className="w-full max-w-md mx-4 rounded-2xl p-6"
+        style={{ background: C.surface, border: `2px solid ${C.red}`,
+                 boxShadow: "0 0 60px #f8717133", animation: "cn-crisis-glow 1.4s ease-in-out infinite" }}>
+        <div className="flex items-center gap-3 mb-5">
+          <Dot color={C.red} sz={12} />
+          <span className="font-bold tracking-widest text-sm font-mono" style={{ color: C.red }}>
+            THERMAL BREACH DETECTED
+          </span>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mb-4">
+          {[["Shipment", ship.id], ["Mode", ship.mode],
+            ["Corridor", `${ship.minT}°C – ${ship.maxT}°C`], ["Reading", "OUT OF RANGE ⚠"]
+          ].map(([k, v]) => (
+            <div key={k} className="rounded-lg p-2.5" style={{ background: "#1a2235" }}>
+              <div style={{ color: C.muted, fontSize: 9, marginBottom: 4, textTransform: "uppercase" }}>{k}</div>
+              <div className="text-xs font-bold" style={{ color: k === "Reading" ? C.red : "#e2e8f0" }}>{v}</div>
+            </div>
+          ))}
+        </div>
+        {hub && (
+          <div className="rounded-lg p-3 mb-4" style={{ background: "#1a2235", border: `1px solid ${C.amber}33` }}>
+            <div className="text-xs font-bold tracking-wider mb-1.5" style={{ color: C.amber }}>NEAREST EMERGENCY HUB</div>
+            <div className="text-sm font-bold text-slate-100 mb-0.5">{hub.name}</div>
+            <div className="text-xs" style={{ color: C.muted }}>
+              ETA to reroute: <b style={{ color: C.amber }}>{hub.eta}</b>
+            </div>
+          </div>
+        )}
+        <button onClick={onResolve}
+          className="w-full py-3 rounded-xl text-xs font-bold tracking-widest hover:opacity-80 transition-opacity"
+          style={{ background: C.green, color: C.bg }}>
+          ✓ CONFIRM REROUTE & RESOLVE
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── §11  PASSPORT MODAL ─────────────────────────────────────────────────────
+function PassportModal({ ship, graphData, audit, onClose, accent, isAdmin, onSign }) {
+  const [sig, setSig] = useState("");
+  const [locked, setLocked] = useState(!!ship.signedOff);
+  useEffect(() => { if (ship.signedOff) setLocked(true); }, [ship.signedOff]);
+
+  const pts   = graphData || [];
+  const avg   = pts.length ? (pts.reduce((s, d) => s + d.v, 0) / pts.length).toFixed(2) : "—";
+  const evts  = audit.filter(e => e.includes(ship.id));
+  const sName = ship.signedOff?.by || sig;
+  const sAt   = ship.signedOff?.at  || new Date().toISOString();
+  const hash  = fakeHash(ship.id + sName + sAt + "cryo4");
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{ background: "#000000cc", animation: "cn-fade .2s ease" }}>
+      <div className="rounded-2xl p-6 w-full max-w-lg max-h-[88vh] overflow-y-auto"
+        style={{ background: C.surface, border: `1px solid ${accent}44`, boxShadow: `0 0 40px ${accent}18` }}>
+        <div className="flex justify-between items-center mb-5">
+          <span className="font-bold tracking-widest text-sm font-mono" style={{ color: accent }}>COMPLIANCE PASSPORT</span>
+          <button onClick={onClose}
+            className="text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-300 transition-colors">
+            ✕ CLOSE
+          </button>
+        </div>
+
+        <div className="rounded-xl p-4 mb-4" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+          {[
+            ["Shipment ID", ship.id], ["Cargo", ship.cargo],
+            ["Route", `${ship.origin} → ${ship.dest}`], ["Mode", ship.mode],
+            ["Avg Temp", `${avg}°C`], ["Corridor", `${ship.minT}°C – ${ship.maxT}°C`],
+            ["Crisis Events", String(evts.filter(e => /BREACH|CRISIS/.test(e)).length || "None")],
+            ["Delivered", ship.deliveredAt || "—"],
+          ].map(([k, v]) => (
+            <div key={k} className="flex justify-between py-1.5 text-xs border-b last:border-0" style={{ borderColor: C.border }}>
+              <span style={{ color: C.muted }}>{k}</span>
+              <span className="text-slate-200 max-w-[55%] text-right">{v}</span>
+            </div>
+          ))}
+        </div>
+
+        {locked ? (
+          <div className="rounded-xl p-4" style={{ background: "#14532d18", border: `1px solid ${C.green}33` }}>
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle size={13} color={C.green} />
+              <span className="text-xs font-bold" style={{ color: C.green }}>PASSPORT LOCKED & ENCRYPTED</span>
+            </div>
+            <div className="text-xs mb-1" style={{ color: C.muted }}>Signed by: <b className="text-slate-300">{sName}</b></div>
+            <div className="text-xs mb-3" style={{ color: C.muted }}>Timestamp: <b className="text-slate-300">{sAt}</b></div>
+            <div className="text-xs font-mono break-all" style={{ color: C.dim }}>SHA-256: {hash}</div>
+          </div>
+        ) : isAdmin ? (
+          <div>
+            <div className="text-xs tracking-wider uppercase mb-2" style={{ color: C.muted }}>Admin Digital Signature</div>
+            <input value={sig} onChange={e => setSig(e.target.value)}
+              className="w-full rounded-lg px-3 py-2 text-xs font-mono mb-3 text-slate-100"
+              style={{ background: C.panel, border: `1px solid ${C.border}`, outline: "none" }}
+              placeholder="Enter your name to sign and lock passport…" />
+            <button onClick={() => { if (sig.trim()) { onSign(ship.id, sig.trim()); setLocked(true); } }}
+              className="w-full py-3 rounded-xl text-xs font-bold tracking-widest hover:opacity-80 transition-opacity"
+              style={{ background: accent, color: C.bg }}>
+              LOCK & GENERATE PASSPORT
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 p-3 rounded-lg" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+            <Lock size={13} color={C.muted} />
+            <span className="text-xs" style={{ color: C.muted }}>Admin sign-off required to lock this passport.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── §12  SHIPMENT DETAIL ────────────────────────────────────────────────────
+function ShipDetail({ ship, graphs, audit, crisisId, accent, isAdmin, isViewer, canOp, onCrisis, onResolve, onPassport, onLog, alert }) {
+  const [logTxt, setLogTxt] = useState("");
+  const [showLog, setShowLog] = useState(false);
+  useEffect(() => { setLogTxt(""); setShowLog(false); }, [ship?.id]);
+
+  if (!ship) return (
+    <div className="flex-1 flex items-center justify-center" style={{ color: C.dim }}>
+      <div className="text-center">
+        <Activity size={28} color={C.dim} className="mx-auto mb-3 opacity-40" />
+        <p className="text-sm">Select a shipment to view telemetry</p>
+      </div>
+    </div>
+  );
+
+  const pts     = graphs[ship.id] || [];
+  const lastT   = pts.at(-1)?.v;
+  const isCr    = crisisId === ship.id;
+  const isHold  = ship.status === "On Hold";
+  const evts    = audit.filter(e => e.includes(ship.id));
+  const hold    = isHold ? getHoldMsg(ship.holdCode, isViewer ? "client" : "admin") : null;
+  const statCol = isCr ? C.red : isDone(ship) ? C.green : isHold ? C.amber : accent;
+  const comp    = pts.length ? Math.round(pts.filter(p => p.v >= ship.minT && p.v <= ship.maxT).length / pts.length * 100) : 100;
+
+  return (
+    <div className="flex-1 p-5 overflow-y-auto relative" style={{ animation: "cn-fade .22s ease" }}>
+      {isCr && canOp && alert && <CrisisOverlay ship={ship} hub={alert.hub} onResolve={onResolve} />}
+
+      <div className="flex justify-between items-start mb-4 gap-3">
+        <div className="min-w-0">
+          <div className="font-bold text-lg tracking-wider mb-1 font-mono truncate" style={{ color: statCol }}>{ship.id}</div>
+          <div className="text-sm text-slate-200 mb-0.5 truncate">{ship.cargo}</div>
+          <div className="text-xs truncate" style={{ color: C.muted }}>{ship.origin} → {ship.dest} · {ship.mode}</div>
+        </div>
+        <div className="flex gap-2 flex-wrap justify-end flex-shrink-0">
+          {canOp && isActive(ship) && !crisisId && (
+            <button onClick={() => onCrisis(ship.id)}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border hover:opacity-75 transition-opacity"
+              style={{ color: C.red, borderColor: C.red, background: `${C.red}10` }}>
+              <AlertTriangle size={11} /> Simulate Crisis
+            </button>
+          )}
+          {isCr && canOp && (
+            <button onClick={onResolve}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg border hover:opacity-75 transition-opacity"
+              style={{ color: C.green, borderColor: C.green, background: `${C.green}10` }}>
+              <CheckCircle size={11} /> Resolve
+            </button>
+          )}
+          {(isAdmin || (isViewer && isDone(ship) && ship.signedOff)) && (
+            <button onClick={() => onPassport(ship.id)}
+              className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-75 transition-opacity"
+              style={{ background: accent, color: C.bg }}>
+              <FileText size={11} /> Passport
+            </button>
+          )}
+          {!isAdmin && !isViewer && isDone(ship) && (
+            <span className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-slate-700 text-slate-500">
+              <Lock size={10} /> Admin only
+            </span>
+          )}
+        </div>
+      </div>
+
+      <div className="rounded-xl p-4 mb-3 transition-all duration-300"
+        style={{
+          background: C.panel,
+          border: `1px solid ${isCr ? C.red : isHold ? C.amber : accent}`,
+          boxShadow: isCr ? `0 0 24px ${C.red}22` : isHold ? `0 0 14px ${C.amber}12` : `0 0 10px ${accent}0e`,
+        }}>
+        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            <Thermometer size={12} color={statCol} />
+            <span className="text-xs font-bold tracking-widest" style={{ color: statCol }}>
+              {isDone(ship) ? "ARCHIVED TELEMETRY" : isHold ? "TELEMETRY — PAUSED" : "LIVE THERMAL TELEMETRY"}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            {isDone(ship) && <Chip label="✓ Journey Complete" color={C.green} xs />}
+            {isHold && !isCr && <Chip label="⏸ On Hold" color={C.amber} xs />}
+            <span className="text-xs" style={{ color: C.muted }}>
+              Corridor: <b className="text-slate-300">{ship.minT}°C – {ship.maxT}°C</b>
+            </span>
+          </div>
+        </div>
+        <Graph data={pts} min={ship.minT} max={ship.maxT}
+          accent={isHold && !isCr ? C.amber : accent} crisis={isCr} gk={ship.id} />
+        <div className="flex gap-4 mt-3 text-xs flex-wrap">
+          <span style={{ color: C.muted }}>Last: <b style={{ color: isCr ? C.red : isHold ? C.amber : C.green }}>{lastT}°C</b></span>
+          <span style={{ color: C.muted }}>Mode: <b className="text-slate-300">{ship.mode}</b></span>
+          {!isViewer
+            ? <span style={{ color: C.muted }}>Compliance: <b style={{ color: comp < 90 ? C.amber : C.green }}>{comp}%</b></span>
+            : <Chip label="Supplier Guarantee: Optimal" color={C.emerald} xs />
+          }
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 mb-3">
+        {hold && (
+          <div className="col-span-2 rounded-xl p-4"
+            style={{ background: `${C.amber}06`, border: `1px solid ${C.amber}40`, animation: "cn-fade .25s ease" }}>
+            <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span style={{ fontSize: 13 }}>{hold.icon}</span>
+                <span className="text-xs font-bold tracking-widest" style={{ color: C.amber }}>
+                  {isViewer ? "HOLD STATUS" : "HOLD REASON — INTERNAL"}
+                </span>
+                <Chip label={hold.tag} color={C.amber} xs />
+              </div>
+              {isAdmin && (
+                <button onClick={() => setShowLog(v => !v)}
+                  className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg border flex-shrink-0 hover:opacity-80 transition-opacity"
+                  style={{ color: C.amber, borderColor: `${C.amber}44`, background: `${C.amber}10` }}>
+                  ✎ {showLog ? "Cancel" : "Log Action"}
+                </button>
+              )}
+            </div>
+            <p className="text-xs leading-relaxed mb-3" style={{ color: isViewer ? "#cbd5e1" : "#fde68a" }}>
+              {hold.body}
+            </p>
+            {isViewer && (
+              <div className="flex items-center gap-2 pt-2 border-t" style={{ borderColor: `${C.amber}20` }}>
+                <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: C.amber, boxShadow: `0 0 5px ${C.amber}` }} />
+                <span className="text-xs font-bold" style={{ color: C.amber }}>Action: Pfizer Team Resolving</span>
+                <span className="text-xs" style={{ color: C.muted }}>— No action required from Moderna</span>
+              </div>
+            )}
+            {isAdmin && showLog && (
+              <div style={{ animation: "cn-fade .2s ease" }}>
+                <textarea rows={2} value={logTxt} onChange={e => setLogTxt(e.target.value)}
+                  placeholder="Describe resolution steps…"
+                  className="w-full rounded-lg px-3 py-2 text-xs font-mono resize-none mb-2"
+                  style={{ background: C.panel, border: `1px solid ${C.amber}35`, outline: "none", color: "#fde68a" }} />
+                <button onClick={() => { if (logTxt.trim()) { onLog(ship.id, logTxt.trim()); setLogTxt(""); setShowLog(false); } }}
+                  className="text-xs font-bold px-4 py-1.5 rounded-lg hover:opacity-80 transition-opacity"
+                  style={{ background: C.amber, color: C.bg }}>Submit Log Entry</button>
+              </div>
+            )}
+            {!isViewer && !showLog && (
+              <div className="flex items-start gap-2 pt-2 border-t" style={{ borderColor: `${C.amber}20` }}>
+                <Eye size={10} color="#475569" style={{ marginTop: 2, flexShrink: 0 }} />
+                <span className="text-xs" style={{ color: "#475569" }}>
+                  Client sees: <em className="text-slate-500">"{getHoldMsg(ship.holdCode, "client").body.split(".")[0]}."</em>
+                </span>
+              </div>
+            )}
+          </div>
+        )}
+        {[
+          ["Origin", ship.origin],
+          ["Destination", ship.dest],
+          ["Transport", ship.mode],
+          ["Status", isCr ? "⚠ CRISIS" : ship.status, isCr ? C.red : isHold && !isCr ? C.amber : undefined],
+          ...(!isViewer ? [["ETA", ship.eta]] : []),
+          ...(ship.signedOff ? [["Signed Off", ship.signedOff.by, C.green]] : []),
+        ].map(([k, v, col]) => (
+          <Cell key={k} k={k} v={v} color={col} hi={k === "Status" && (isHold || isCr) ? `${statCol}35` : undefined} />
+        ))}
+      </div>
+
+      {canOp && evts.length > 0 && (
+        <div className="rounded-xl p-3"
+          style={{ background: C.panel, border: `1px solid ${isHold && !isCr ? `${C.amber}25` : "#f8717122"}` }}>
+          <div className="flex items-center gap-2 mb-2">
+            <Radio size={10} color={isHold && !isCr ? C.amber : C.red} />
+            <span className="text-xs font-bold tracking-wider" style={{ color: isHold && !isCr ? C.amber : C.red }}>SESSION AUDIT TRAIL</span>
+          </div>
+          {evts.map((e, i) => (
+            <div key={i} className="text-xs py-1 border-b last:border-0" style={{ color: C.muted, borderColor: C.border }}>
+              <span style={{ color: isHold && !isCr ? C.amber : C.red }}>▶ </span>{e}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── §13  ROUTE MARKETPLACE (Pfizer only) ────────────────────────────────────
+function Marketplace({ accent, selMode, onMode, selShip }) {
+  const profile = useMemo(() => cargoProfile(selShip?.cargo || ""), [selShip?.cargo]);
+  const scored  = useMemo(() => ROUTES.map(r => ({ ...r, s: score(r, profile) })), [profile]);
+  const auto    = useMemo(() => scored.reduce((a, b) => a.s > b.s ? a : b), [scored]);
+  const golden  = selMode || auto.mode;
+  const maxW    = Math.max(profile.wCost, profile.wSpeed, profile.wThermal);
+
+  return (
+    <div className="flex-1 p-6 overflow-y-auto max-w-2xl" style={{ animation: "cn-fade .22s ease" }}>
+      <Head label="Intelligent Route Marketplace" accent={accent} />
+
+      {selShip && (
+        <div className="rounded-xl p-3 mb-5 flex items-center gap-3"
+          style={{ background: `${profile.accent}0d`, border: `1px solid ${profile.accent}28` }}>
+          <span style={{ fontSize: 18 }}>
+            {profile.type === "vaccine" ? "🧬" : profile.type === "tablet" ? "💊" : "📦"}
+          </span>
+          <div>
+            <div className="text-xs font-bold tracking-wider mb-0.5" style={{ color: profile.accent }}>
+              {profile.label.toUpperCase()}
+            </div>
+            <div className="text-xs truncate" style={{ color: C.muted }}>
+              Active cargo: <b className="text-slate-200">{selShip.cargo}</b>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="rounded-xl p-4 mb-5" style={{ background: C.panel, border: `1px solid ${C.border}` }}>
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-xs font-bold tracking-widest" style={{ color: C.muted }}>SCORING FORMULA</span>
+          <code className="text-xs" style={{ color: C.muted }}>-(Cost·Wc) + (Speed·Ws) - (Thermal·Wt)</code>
+        </div>
+        {[
+          { axis: "Cost",         w: profile.wCost,    color: C.amber },
+          { axis: "Speed",        w: profile.wSpeed,   color: accent  },
+          { axis: "Thermal Risk", w: profile.wThermal, color: C.red   },
+        ].map(({ axis, w, color }) => (
+          <div key={axis} className="mb-2">
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-xs" style={{ color: "#94a3b8" }}>{axis}</span>
+              <span className="text-xs font-bold font-mono px-1.5 py-0.5 rounded"
+                style={{ background: `${profile.accent}15`, color: profile.accent }}>×{w.toFixed(2)}</span>
+            </div>
+            <div className="h-1 rounded-full" style={{ background: C.border }}>
+              <div className="h-1 rounded-full transition-all duration-500"
+                style={{ width: `${(w / maxW) * 100}%`, background: color }} />
+            </div>
+          </div>
+        ))}
+        <div className="text-xs mt-2 pt-2 border-t" style={{ color: C.dim, borderColor: C.border }}>
+          Higher score = recommended · Click a card to override the Golden Path
+        </div>
+      </div>
+
+      {scored.map(r => {
+        const isG = r.mode === golden, isSel = selMode === r.mode;
+        return (
+          <div key={r.mode} onClick={() => onMode(isSel ? null : r.mode)}
+            className="rounded-xl p-4 mb-3 flex items-center gap-4 cursor-pointer transition-all duration-200"
+            style={{
+              background: C.panel,
+              border: `1px solid ${isG ? accent : C.border}`,
+              boxShadow: isG ? `0 0 18px ${accent}18` : "none",
+              outline: isSel ? `2px solid ${accent}` : "none",
+              outlineOffset: 2,
+              transform: isG ? "translateX(3px)" : "none",
+            }}>
+            <span className="text-2xl flex-shrink-0">{r.emoji}</span>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                <span className="text-sm font-bold text-slate-100">{r.mode}</span>
+                {isG && <Chip label={`★ GOLDEN PATH · ${profile.type.toUpperCase()}`} color={accent} />}
+                {isG && <Chip label={profile.label} color={profile.accent} xs />}
+              </div>
+              <div className="flex gap-4 text-xs flex-wrap" style={{ color: C.muted }}>
+                <span>Cost: <b className="text-slate-300">${r.cost.toLocaleString()}</b></span>
+                <span>Speed: <b className="text-slate-300">{r.speed}%</b></span>
+                <span>Thermal Risk: <b style={{ color: r.thermal > 50 ? C.red : C.green }}>{r.thermal}%</b></span>
+              </div>
+            </div>
+            <div className="text-right flex-shrink-0 min-w-[56px]">
+              <div className="text-xs mb-0.5" style={{ color: C.dim }}>SCORE</div>
+              <div className="text-sm font-bold font-mono" style={{ color: isG ? accent : C.dim }}>{r.s.toFixed(3)}</div>
+            </div>
+          </div>
+        );
+      })}
+
+      {selMode && (
+        <button onClick={() => onMode(null)}
+          className="text-xs border rounded-lg px-3 py-1.5 mt-1 hover:text-slate-300 transition-colors"
+          style={{ color: C.muted, borderColor: C.border }}>
+          ↺ Reset to auto-recommendation
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ─── §14a  NEW ORDER MODAL (Moderna Viewer only) ─────────────────────────────
+function NewOrderModal({ onClose, onSubmit, accent }) {
+  const [selProduct, setSelProduct] = useState(null);
+  const [selDest,    setSelDest]    = useState(null);
+  const [notes,      setNotes]      = useState("");
+  const canSubmit = selProduct && selDest;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center px-0 sm:px-4"
+      style={{ background: "#000000d0", animation: "cn-fade .2s ease" }}>
+
+      {/*
+        ┌─────────────────────────────────────────┐
+        │  Modal shell — flex column, 85 vh cap   │
+        │  • header   → fixed height, never scrolls
+        │  • body     → flex-1 + overflow-y-auto  │
+        │  • footer   → sticky bottom-0           │
+        └─────────────────────────────────────────┘
+      */}
+      <div className="w-full max-w-lg flex flex-col rounded-t-2xl sm:rounded-2xl"
+        style={{
+          maxHeight: "85vh",
+          background: "#0b0f1a",
+          border: `1px solid ${accent}44`,
+          boxShadow: `0 0 60px ${accent}20`,
+        }}>
+
+        {/* ── HEADER (never scrolls) ── */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-4 flex-shrink-0"
+          style={{ borderBottom: "1px solid #1a2235" }}>
+          <div>
+            <div className="font-black tracking-[0.18em] text-sm font-mono" style={{ color: accent }}>
+              NEW SUPPLY REQUEST
+            </div>
+            <div className="text-xs mt-0.5" style={{ color: "#4a5f7a" }}>
+              Moderna Procurement Portal · Submit to Pfizer
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="flex-shrink-0 text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-300 transition-colors ml-4">
+            ✕ CLOSE
+          </button>
+        </div>
+
+        {/* ── SCROLLABLE BODY ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5" style={{ minHeight: 0 }}>
+
+          {/* Step 1 — Product */}
+          <div className="mb-6">
+            <div className="text-xs font-bold tracking-widest mb-3 flex items-center gap-2"
+              style={{ color: "#4a5f7a" }}>
+              <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 font-black"
+                style={{
+                  background: selProduct ? `${accent}25` : "#1e2d44",
+                  color: selProduct ? accent : "#4a5f7a",
+                  fontSize: 9,
+                }}>1</span>
+              SELECT PRODUCT
+              {selProduct && (
+                <span className="ml-auto font-normal" style={{ color: accent, fontSize: 9 }}>
+                  ✓ {selProduct.label.split(" ").slice(0, 2).join(" ")}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {PRODUCTS.map(p => {
+                const prof  = cargoProfile(p.label);
+                const isSel = selProduct?.id === p.id;
+                return (
+                  <div key={p.id} onClick={() => setSelProduct(p)}
+                    className="rounded-xl p-3 cursor-pointer transition-all duration-200"
+                    style={{
+                      background: isSel ? `${prof.accent}12` : "#0e1420",
+                      border:     `1px solid ${isSel ? prof.accent : "#1a2235"}`,
+                      boxShadow:  isSel ? `0 0 14px ${prof.accent}18` : "none",
+                      outline:    isSel ? `1px solid ${prof.accent}` : "none",
+                      outlineOffset: 1,
+                    }}>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span style={{ fontSize: 15 }}>{p.emoji}</span>
+                      <span className="font-bold tracking-widest"
+                        style={{ color: isSel ? prof.accent : "#4a5f7a", fontSize: 8 }}>
+                        {p.type.toUpperCase()}
+                      </span>
+                      {isSel && (
+                        <span className="ml-auto text-xs" style={{ color: prof.accent }}>✓</span>
+                      )}
+                    </div>
+                    <div className="text-xs font-bold leading-snug mb-1"
+                      style={{ color: isSel ? "#e2e8f0" : "#94a3b8" }}>
+                      {p.label}
+                    </div>
+                    <div style={{ color: "#4a5f7a", fontSize: 9 }}>{p.desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Step 2 — Destination */}
+          <div className="mb-6">
+            <div className="text-xs font-bold tracking-widest mb-3 flex items-center gap-2"
+              style={{ color: "#4a5f7a" }}>
+              <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 font-black"
+                style={{
+                  background: selDest ? `${accent}25` : "#1e2d44",
+                  color: selDest ? accent : "#4a5f7a",
+                  fontSize: 9,
+                }}>2</span>
+              SELECT DESTINATION
+              {selDest && (
+                <span className="ml-auto font-normal" style={{ color: accent, fontSize: 9 }}>
+                  ✓ {selDest.label}
+                </span>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              {DESTINATIONS.map(d => {
+                const isSel = selDest?.label === d.label;
+                return (
+                  <div key={d.label} onClick={() => setSelDest(d)}
+                    className="rounded-lg p-2.5 cursor-pointer transition-all duration-200 flex items-center gap-2"
+                    style={{
+                      background: isSel ? `${accent}12` : "#0e1420",
+                      border:     `1px solid ${isSel ? accent : "#1a2235"}`,
+                      outline:    isSel ? `1px solid ${accent}` : "none",
+                      outlineOffset: 1,
+                    }}>
+                    <span style={{ fontSize: 12, flexShrink: 0 }}>📍</span>
+                    <div className="min-w-0">
+                      <div className="text-xs font-bold truncate"
+                        style={{ color: isSel ? accent : "#94a3b8" }}>{d.label}</div>
+                      <div style={{ color: "#4a5f7a", fontSize: 9 }}>From: {d.origin}</div>
+                    </div>
+                    {isSel && (
+                      <span className="ml-auto flex-shrink-0 text-xs" style={{ color: accent }}>✓</span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Golden Path preview — appears when both are selected */}
+          {selProduct && selDest && (() => {
+            const mode  = goldenMode(selProduct.label);
+            const route = ROUTES.find(r => r.mode === mode);
+            const prof  = cargoProfile(selProduct.label);
+            return (
+              <div className="rounded-xl p-3.5 mb-6"
+                style={{
+                  background: `${accent}08`,
+                  border: `1px solid ${accent}30`,
+                  animation: "cn-fade .25s ease",
+                }}>
+                <div className="text-xs font-bold tracking-widest mb-2.5 flex items-center gap-1.5"
+                  style={{ color: accent }}>
+                  <span>★</span> GOLDEN PATH SELECTED
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { lbl: "Mode",     val: `${route.emoji} ${mode}`,   col: "#e2e8f0" },
+                    { lbl: "Profile",  val: prof.label.split(" ")[0],    col: prof.accent },
+                    { lbl: "Corridor", val: `${selProduct.minT}°C – ${selProduct.maxT}°C`, col: "#e2e8f0" },
+                  ].map(({ lbl, val, col }) => (
+                    <div key={lbl} className="rounded-lg p-2"
+                      style={{ background: "#0e1420", border: "1px solid #1a2235" }}>
+                      <div style={{ color: "#4a5f7a", fontSize: 8, marginBottom: 3, textTransform: "uppercase", letterSpacing: "0.08em" }}>{lbl}</div>
+                      <div className="text-xs font-bold" style={{ color: col }}>{val}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Step 3 — Notes */}
+          <div className="mb-2">
+            <div className="text-xs font-bold tracking-widest mb-2 flex items-center gap-2"
+              style={{ color: "#4a5f7a" }}>
+              <span className="w-4 h-4 rounded-full flex items-center justify-center flex-shrink-0 font-black"
+                style={{ background: "#1e2d44", color: "#4a5f7a", fontSize: 9 }}>3</span>
+              ADDITIONAL NOTES
+              <span style={{ color: "#1e2d44", fontWeight: "normal" }}>(OPTIONAL)</span>
+            </div>
+            <textarea rows={3} value={notes} onChange={e => setNotes(e.target.value)}
+              placeholder="Priority level, regulatory requirements, special handling instructions…"
+              className="w-full rounded-lg px-3 py-2.5 text-xs font-mono resize-none"
+              style={{
+                background: "#0e1420",
+                border: "1px solid #1a2235",
+                outline: "none",
+                color: "#94a3b8",
+                lineHeight: 1.6,
+              }} />
+          </div>
+
+        </div>{/* end scrollable body */}
+
+        {/* ── STICKY FOOTER — always visible, never scrolls away ── */}
+        <div className="sticky bottom-0 flex-shrink-0 px-6 py-4"
+          style={{
+            background: "#0b0f1a",
+            borderTop: `1px solid ${canSubmit ? `${accent}30` : "#1a2235"}`,
+            boxShadow: "0 -8px 24px #05080fcc",
+          }}>
+
+          {/* Selection summary */}
+          {(selProduct || selDest) && (
+            <div className="flex items-center gap-2 mb-3 text-xs" style={{ color: "#4a5f7a" }}>
+              <span>Order:</span>
+              {selProduct && (
+                <span className="px-1.5 py-0.5 rounded font-bold"
+                  style={{ background: `${cargoProfile(selProduct.label).accent}15`, color: cargoProfile(selProduct.label).accent, fontSize: 9 }}>
+                  {selProduct.emoji} {selProduct.label.split(" ").slice(0, 3).join(" ")}
+                </span>
+              )}
+              {selProduct && selDest && <span style={{ color: "#1e2d44" }}>→</span>}
+              {selDest && (
+                <span className="px-1.5 py-0.5 rounded font-bold"
+                  style={{ background: `${accent}12`, color: accent, fontSize: 9 }}>
+                  📍 {selDest.label}
+                </span>
+              )}
+            </div>
+          )}
+
+          <button
+            onClick={() => canSubmit && onSubmit(selProduct, selDest, notes)}
+            disabled={!canSubmit}
+            className="w-full py-3.5 rounded-xl text-xs font-bold tracking-widest transition-all duration-300"
+            style={{
+              background:  canSubmit
+                ? `linear-gradient(135deg, ${accent}, #0ea5e9)`
+                : "#1a2235",
+              color:       canSubmit ? "#05080f" : "#2d3f55",
+              cursor:      canSubmit ? "pointer"  : "not-allowed",
+              boxShadow:   canSubmit ? `0 0 28px ${accent}44` : "none",
+              letterSpacing: "0.14em",
+            }}>
+            {canSubmit
+              ? "⬆  PLACE ORDER — SUBMIT TO PFIZER"
+              : "SELECT PRODUCT & DESTINATION TO CONTINUE"}
+          </button>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ─── §14b  APPROVE & DISPATCH MODAL (Pfizer Admin) ───────────────────────────
+function ApproveDispatchModal({ ship, onClose, onDispatch, accent }) {
+  const [chosenRoute, setChosenRoute] = useState(null);
+  const prof       = cargoProfile(ship.cargo);
+  const autoMode   = goldenMode(ship.cargo);
+  const scored     = ROUTES.map(r => ({ ...r, s: score(r, prof) }));
+  const maxScore   = Math.max(...scored.map(r => r.s));
+  const activeMode = chosenRoute ?? autoMode;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: "#000000d8", animation: "cn-fade .2s ease" }}>
+      <div className="w-full max-w-lg flex flex-col rounded-2xl"
+        style={{
+          maxHeight: "88vh",
+          background: "#0b0f1a",
+          border: `1px solid ${accent}55`,
+          boxShadow: `0 0 60px ${accent}20`,
+        }}>
+
+        {/* ── HEADER ── */}
+        <div className="flex items-start justify-between px-6 pt-5 pb-4 flex-shrink-0"
+          style={{ borderBottom: "1px solid #1a2235" }}>
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-xs font-bold px-2 py-0.5 rounded"
+                style={{ background: "#f59e0b22", color: "#f59e0b" }}>⏳ PENDING APPROVAL</span>
+              <span className="font-black tracking-widest text-sm font-mono" style={{ color: accent }}>
+                {ship.id}
+              </span>
+            </div>
+            <div className="text-xs" style={{ color: "#4a5f7a" }}>
+              Moderna Request · Pfizer Admin Review Required
+            </div>
+          </div>
+          <button onClick={onClose}
+            className="flex-shrink-0 text-xs px-2.5 py-1 rounded border border-slate-700 text-slate-500 hover:text-slate-300 transition-colors ml-4">
+            ✕ CLOSE
+          </button>
+        </div>
+
+        {/* ── SCROLLABLE BODY ── */}
+        <div className="flex-1 overflow-y-auto px-6 py-5" style={{ minHeight: 0 }}>
+
+          {/* Order summary */}
+          <div className="rounded-xl p-4 mb-5"
+            style={{ background: "#0e1420", border: "1px solid #1a2235" }}>
+            <div className="text-xs font-bold tracking-widest mb-3" style={{ color: "#4a5f7a" }}>
+              ORDER DETAILS — FROM MODERNA
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+              {[
+                ["Cargo",     ship.cargo,  prof.accent],
+                ["Type",      prof.label,  prof.accent],
+                ["Origin",    ship.origin, "#e2e8f0"],
+                ["Dest",      ship.dest,   "#e2e8f0"],
+                ["Corridor",  `${ship.minT}°C – ${ship.maxT}°C`, "#e2e8f0"],
+                ["Requested", ship.requestedAt
+                  ? new Date(ship.requestedAt).toLocaleString("en-GB", { dateStyle: "short", timeStyle: "short" })
+                  : "—",  "#64748b"],
+              ].map(([k, v, col]) => (
+                <div key={k}>
+                  <div style={{ color: "#4a5f7a", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 2 }}>{k}</div>
+                  <div className="text-xs font-bold leading-snug" style={{ color: col }}>{v}</div>
+                </div>
+              ))}
+            </div>
+            {ship.notes && (
+              <div className="mt-3 pt-3 border-t" style={{ borderColor: "#1a2235" }}>
+                <div style={{ color: "#4a5f7a", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.09em", marginBottom: 4 }}>Client Notes</div>
+                <div className="text-xs" style={{ color: "#94a3b8" }}>📝 {ship.notes}</div>
+              </div>
+            )}
+          </div>
+
+          {/* Route selection */}
+          <div className="mb-5">
+            <div className="text-xs font-bold tracking-widest mb-3 flex items-center gap-2"
+              style={{ color: "#4a5f7a" }}>
+              SELECT DISPATCH ROUTE
+              <span className="ml-auto text-xs font-normal" style={{ color: accent, fontSize: 9 }}>
+                ★ = Golden Path for {prof.type}
+              </span>
+            </div>
+            {scored.map(r => {
+              const isAuto  = r.mode === autoMode;
+              const isChosen = r.mode === activeMode;
+              const barPct  = Math.max(5, Math.round(((r.s - Math.min(...scored.map(x => x.s))) /
+                              (maxScore - Math.min(...scored.map(x => x.s)) || 1)) * 100));
+              return (
+                <div key={r.mode} onClick={() => setChosenRoute(r.mode)}
+                  className="rounded-xl p-4 mb-2.5 cursor-pointer transition-all duration-200"
+                  style={{
+                    background: isChosen ? `${accent}10` : "#0e1420",
+                    border:     `1px solid ${isChosen ? accent : "#1a2235"}`,
+                    boxShadow:  isChosen ? `0 0 18px ${accent}18` : "none",
+                    transform:  isChosen ? "translateX(2px)" : "none",
+                  }}>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span style={{ fontSize: 20 }}>{r.emoji}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+                        <span className="text-sm font-bold" style={{ color: isChosen ? "#e2e8f0" : "#94a3b8" }}>{r.mode}</span>
+                        {isAuto && (
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded"
+                            style={{ background: `${accent}20`, color: accent, fontSize: 8 }}>
+                            ★ GOLDEN PATH
+                          </span>
+                        )}
+                        {isChosen && !isAuto && (
+                          <span className="text-xs font-bold px-1.5 py-0.5 rounded"
+                            style={{ background: "#1e2d44", color: "#64748b", fontSize: 8 }}>
+                            MANUAL OVERRIDE
+                          </span>
+                        )}
+                        <div className="ml-auto flex items-center gap-1.5">
+                          <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                            style={{ borderColor: isChosen ? accent : "#2d3f55", background: isChosen ? accent : "transparent" }}>
+                            {isChosen && <div className="w-1.5 h-1.5 rounded-full" style={{ background: "#05080f" }} />}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Score bar */}
+                      <div className="h-1 rounded-full mt-1" style={{ background: "#1a2235" }}>
+                        <div className="h-1 rounded-full transition-all duration-500"
+                          style={{ width: `${barPct}%`, background: isChosen ? accent : "#2d3f55" }} />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex gap-4 text-xs pl-8" style={{ color: "#4a5f7a" }}>
+                    <span>Cost: <b style={{ color: "#94a3b8" }}>${r.cost.toLocaleString()}</b></span>
+                    <span>Speed: <b style={{ color: "#94a3b8" }}>{r.speed}%</b></span>
+                    <span>Thermal Risk: <b style={{ color: r.thermal > 50 ? C.red : C.green }}>{r.thermal}%</b></span>
+                    <span>Score: <b style={{ color: isAuto ? accent : "#64748b" }}>{r.s.toFixed(3)}</b></span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Dispatch preview */}
+          <div className="rounded-xl p-3.5 mb-1"
+            style={{ background: `${accent}08`, border: `1px solid ${accent}25` }}>
+            <div className="text-xs font-bold tracking-widest mb-2" style={{ color: accent }}>
+              DISPATCH PREVIEW
+            </div>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              {[
+                { lbl: "Route",    val: `${ROUTES.find(r => r.mode === activeMode)?.emoji} ${activeMode}`, col: "#e2e8f0" },
+                { lbl: "Profile",  val: prof.type.toUpperCase(), col: prof.accent },
+                { lbl: "Corridor", val: `${ship.minT}°C – ${ship.maxT}°C`, col: "#e2e8f0" },
+              ].map(({ lbl, val, col }) => (
+                <div key={lbl} className="rounded-lg p-2" style={{ background: "#0e1420", border: "1px solid #1a2235" }}>
+                  <div style={{ color: "#4a5f7a", fontSize: 8, textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: 3 }}>{lbl}</div>
+                  <div className="font-bold" style={{ color: col, fontSize: 11 }}>{val}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+
+        {/* ── STICKY FOOTER ── */}
+        <div className="sticky bottom-0 flex-shrink-0 px-6 py-4"
+          style={{
+            background: "#0b0f1a",
+            borderTop: `1px solid ${accent}30`,
+            boxShadow: "0 -8px 24px #05080fcc",
+          }}>
+          <div className="flex gap-3">
+            <button onClick={onClose}
+              className="px-4 py-3 rounded-xl text-xs font-bold tracking-widest border transition-colors"
+              style={{ borderColor: "#1a2235", color: "#4a5f7a", background: "#0e1420" }}>
+              REJECT
+            </button>
+            <button onClick={() => onDispatch(ship.id, activeMode)}
+              className="flex-1 py-3 rounded-xl text-xs font-bold tracking-widest transition-all duration-300"
+              style={{
+                background:    `linear-gradient(135deg, ${accent}, #0ea5e9)`,
+                color:         "#05080f",
+                boxShadow:     `0 0 28px ${accent}44`,
+                letterSpacing: "0.14em",
+              }}>
+              ✈ APPROVE & DISPATCH — {activeMode.toUpperCase()}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── §14c  PENDING REQUESTS PANEL (Pfizer Admin — Command Center sidebar) ─────
+function PendingRequestsPanel({ ships, onReview, accent }) {
+  const pending = ships.filter(isPending);
+  if (!pending.length) return null;
+
+  return (
+    <div className="mt-4" style={{ animation: "cn-fade .25s ease" }}>
+      <div className="flex items-center justify-between pb-2 mb-3"
+        style={{ borderBottom: `1px solid #f59e0b33` }}>
+        <span className="text-xs font-bold tracking-widest uppercase" style={{ color: "#f59e0b" }}>
+          ⏳ Pending Requests
+        </span>
+        <span className="text-xs font-bold px-1.5 py-0.5 rounded"
+          style={{ background: "#f59e0b22", color: "#f59e0b", fontSize: 9 }}>
+          {pending.length}
+        </span>
+      </div>
+      {pending.map(s => {
+        const prof = cargoProfile(s.cargo);
+        return (
+          <div key={s.id} className="rounded-xl p-3 mb-2"
+            style={{ background: "#0e1420", border: "1px solid #f59e0b40" }}>
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="min-w-0">
+                <div className="text-xs font-bold font-mono truncate" style={{ color: "#f59e0b" }}>{s.id}</div>
+                <div className="text-xs truncate mt-0.5" style={{ color: "#94a3b8" }}>
+                  {s.cargo.split("(")[0].trim()}
+                </div>
+                <div style={{ color: "#4a5f7a", fontSize: 9, marginTop: 2 }}>
+                  {s.origin} → {s.dest}
+                </div>
+              </div>
+              <span className="text-xs font-bold px-1.5 py-0.5 rounded flex-shrink-0"
+                style={{ background: `${prof.accent}15`, color: prof.accent, fontSize: 9 }}>
+                {prof.type.toUpperCase()}
+              </span>
+            </div>
+            {s.notes && (
+              <div className="text-xs mb-2 px-2 py-1.5 rounded"
+                style={{ background: "#1a2235", color: "#64748b" }}>
+                📝 {s.notes}
+              </div>
+            )}
+            <div className="flex items-center gap-1.5 mb-2.5" style={{ color: "#4a5f7a", fontSize: 9 }}>
+              <span>★ Suggested:</span>
+              <span className="font-bold" style={{ color: accent }}>
+                {ROUTES.find(r => r.mode === goldenMode(s.cargo))?.emoji} {goldenMode(s.cargo)}
+              </span>
+              <span>· {s.minT}°C to {s.maxT}°C</span>
+            </div>
+            <button onClick={() => onReview(s.id)}
+              className="w-full py-2 rounded-lg text-xs font-bold tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5"
+              style={{
+                background: `linear-gradient(135deg, ${accent}, #0ea5e9)`,
+                color: "#05080f",
+                boxShadow: `0 0 12px ${accent}30`,
+              }}>
+              Review & Dispatch →
+            </button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+// ─── §14  LOGIN GATE ─────────────────────────────────────────────────────────
+function Login({ onLogin }) {
+  const [sel, setSel] = useState(null);
+  const p = sel !== null ? PROFILES[sel] : null;
+
+  return (
+    <div className="min-h-screen flex items-center justify-center p-4"
+      style={{ background: `radial-gradient(ellipse at 20% 20%, #091a2e 0%, ${C.bg} 70%)` }}>
+      <div className="w-full max-w-lg">
+        <div className="text-center mb-10">
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <Snowflake size={26} color={C.cyan} className="animate-spin" style={{ animationDuration: "10s" }} />
+            <span className="font-black tracking-[0.22em] text-2xl font-mono"
+              style={{ color: C.cyan, textShadow: `0 0 28px ${C.cyan}66` }}>CRYO-NEXUS</span>
+          </div>
+          <p className="text-xs tracking-[0.2em]" style={{ color: C.dim }}>
+            INTELLIGENT COLD-CHAIN OS  ·  v4.0  ·  PRODUCTION
+          </p>
+        </div>
+
+        <div className="space-y-2 mb-6">
+          {PROFILES.map((prof, i) => (
+            <div key={prof.id} onClick={() => setSel(i)}
+              className="rounded-xl p-4 cursor-pointer transition-all duration-200"
+              style={{
+                background: sel === i ? `${prof.accent}0d` : C.surface,
+                border: `1px solid ${sel === i ? prof.accent : C.border}`,
+                boxShadow: sel === i ? `0 0 20px ${prof.accent}15` : "none",
+              }}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Chip label={prof.badge} color={prof.accent} xs />
+                    <span className="text-sm font-bold text-slate-100">{prof.label}</span>
+                    {prof.tenant === "moderna" && <Chip label="CLIENT" color={C.muted} xs />}
+                  </div>
+                  <div className="text-xs" style={{ color: C.muted }}>{prof.sub}</div>
+                </div>
+                <div className="w-4 h-4 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all"
+                  style={{ borderColor: sel === i ? prof.accent : C.dim, background: sel === i ? prof.accent : "transparent" }}>
+                  {sel === i && <div className="w-1.5 h-1.5 rounded-full" style={{ background: C.bg }} />}
+                </div>
+              </div>
+              {sel === i && (
+                <p className="text-xs mt-2 pt-2 border-t leading-relaxed" style={{ color: "#94a3b8", borderColor: C.border }}>
+                  {prof.desc}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button onClick={() => p && onLogin(p)} disabled={!p}
+          className="w-full py-3.5 rounded-xl text-sm font-bold tracking-widest transition-all duration-200"
+          style={{ background: p ? p.accent : C.surface, color: p ? C.bg : C.muted, cursor: p ? "pointer" : "not-allowed" }}>
+          {p ? `AUTHENTICATE AS ${p.label.toUpperCase()}` : "SELECT A PROFILE TO CONTINUE"}
+        </button>
+
+        <p className="text-center text-xs mt-4 tracking-widest" style={{ color: C.dim }}>
+          MULTI-TENANT RBAC  ·  AES-256  ·  ISO 21386 COLD-CHAIN COMPLIANT
+        </p>
+      </div>
+    </div>
+  );
+}
+
+// ─── §15  ROOT ───────────────────────────────────────────────────────────────
+export default function CryoNexus() {
+  const [profile, setProfile] = useState(null);
+  const [authed,  setAuthed]  = useState(false);
+  const [ships,   setShips]   = useState(() => getStore().ships);
+  const [graphs,  setGraphs]  = useState({});
+  const [audit,   setAudit]   = useState([]);
+  const [sysAlert, setSysAlert] = useState(null);
+  const alertRef = useRef(sysAlert);
+  useEffect(() => { alertRef.current = sysAlert; }, [sysAlert]);
+
+  const [view,         setView]         = useState("command");
+  const [selId,        setSelId]         = useState(null);
+  const [routeMode,    setRouteMode]     = useState(null);
+  const [passId,       setPassId]        = useState(null);
+  const [latency,      setLatency]       = useState(102);
+  const [showOrder,    setShowOrder]     = useState(false);
+  const [reviewId,     setReviewId]      = useState(null);  // Pfizer approval modal
+
+  const role    = profile?.role   ?? "Viewer";
+  const accent  = profile?.accent ?? C.cyan;
+  const isAdmin = role === "Admin";
+  const isViewer= role === "Viewer";
+  const canOp   = role === "Admin" || role === "Operator";
+
+  // SECURITY: Moderna sees ONLY their assigned shipments
+  const visible = useMemo(
+    () => isViewer ? ships.filter(s => s.tenant === "moderna") : ships,
+    [ships, isViewer]
+  );
+
+  // RBAC: Moderna gets reduced nav; Command/Marketplace NEVER mount
+  const NAV = useMemo(() => isViewer
+    ? [
+        { key: "tracking",   label: "Shipment Tracking", Icon: Truck      },
+        { key: "compliance", label: "Compliance Vault",  Icon: FileText   },
+      ]
+    : [
+        { key: "command",    label: "Command Center",    Icon: Globe      },
+        { key: "shipments",  label: "Shipments",         Icon: Package    },
+        { key: "routes",     label: "Route Marketplace", Icon: Navigation },
+        { key: "compliance", label: "Compliance Vault",  Icon: FileText   },
+      ],
+    [isViewer]
+  );
+
+  const selShip  = ships.find(s => s.id === selId) ?? visible[0] ?? null;
+  const passShip = ships.find(s => s.id === passId);
+  const crisisOn = !!sysAlert;
+
+  const doLogin = useCallback((p) => {
+    const store = getStore();
+    _ensureGraphs();
+    setProfile(p); setAuthed(true);
+    setShips([...store.ships]);
+    setGraphs({ ...store.graphs });
+    setAudit(() => {
+      const entry = `SESSION START — ${ts()} — ${p.label}`;
+      return [...store.audit, entry];
+    });
+    setSysAlert(null);
+    setView(p.role === "Viewer" ? "tracking" : "command");
+    const shipsForRole = p.role === "Viewer"
+      ? store.ships.filter(s => s.tenant === "moderna")
+      : store.ships;
+    const first = shipsForRole.find(s => !isPending(s)) ?? shipsForRole[0] ?? null;
+    setSelId(first?.id ?? null);
+    setRouteMode(null); setPassId(null); setReviewId(null);
+  }, []);
+
+  const doLogout = useCallback(() => {
+    setShips(prev => { getStore().ships = [...prev]; return prev; });
+    setAuthed(false); setProfile(null); setSysAlert(null); setReviewId(null);
+  }, []);
+
+  // Telemetry tick — 2s
+  useEffect(() => {
+    if (!authed) return;
+    const iv = setInterval(() => {
+      setGraphs(prev => {
+        const next = { ...prev };
+        SEEDS.forEach(s => {
+          if (!next[s.id] || isDone(s)) return;
+          const inCr = alertRef.current?.shipmentId === s.id;
+          const pt = { t: (next[s.id].at(-1)?.t ?? 0) + 1, v: inCr ? crisisTick(s.minT, s.maxT) : normalTick(s.minT, s.maxT) };
+          next[s.id] = [...next[s.id].slice(-19), pt];
+        });
+        return next;
+      });
+      setLatency(90 + Math.floor(Math.random() * 40));
+    }, 2000);
+    return () => clearInterval(iv);
+  }, [authed]);
+
+  // Breach detection → audit
+  useEffect(() => {
+    if (!sysAlert) return;
+    const s = ships.find(x => x.id === sysAlert.shipmentId);
+    if (!s) return;
+    const last = graphs[s.id]?.at(-1)?.v;
+    if (last !== undefined && (last > s.maxT || last < s.minT)) {
+      const entry = `[${s.id}] BREACH ${last}°C @${ts()} → Hub: ${sysAlert.hub.name}`;
+      setAudit(prev => prev.at(-1) === entry ? prev : [...prev, entry]);
+    }
+  }, [graphs, sysAlert, ships]);
+
+  const triggerCrisis = useCallback((id) => {
+    const hub = EMERGENCY_HUBS[Math.floor(Math.random() * EMERGENCY_HUBS.length)];
+    setSysAlert({ shipmentId: id, hub });
+    setAudit(prev => [...prev, `[${id}] CRISIS INITIATED @${ts()} by ${role}`]);
+  }, [role]);
+
+  const resolveCrisis = useCallback(() => {
+    if (!sysAlert) return;
+    setAudit(prev => [...prev, `[${sysAlert.shipmentId}] RESOLVED @${ts()} → ${sysAlert.hub.name}`]);
+    setSysAlert(null);
+  }, [sysAlert]);
+
+  // Logic Bridge: Admin sign-off propagates instantly to Moderna
+  const signDelivery = useCallback((id, name) => {
+    const at = new Date().toISOString();
+    setShips(prev => prev.map(s =>
+      s.id === id ? { ...s, status: "Delivered", deliveredAt: at, signedOff: { by: name, at } } : s
+    ));
+    setAudit(prev => [...prev, `[${id}] SIGNED OFF by ${name} @${at}`]);
+  }, []);
+
+  const logHold = useCallback((id, note) => {
+    setAudit(prev => [...prev, `[${id}] ✎ ACTION @${ts()} — ${note}`]);
+  }, []);
+
+  // Place Order: Moderna submits → status "Pending Approval", added to global ships
+  const submitOrder = useCallback((product, dest, notes) => {
+    const id  = nextOrderId();
+    const now = new Date().toISOString();
+    const newShip = {
+      id,
+      cargo:       product.label,
+      origin:      dest.origin,
+      dest:        dest.label,
+      mode:        "—",
+      minT:        product.minT,
+      maxT:        product.maxT,
+      lat:         dest.lat,
+      lng:         dest.lng,
+      status:      "Pending Approval",
+      eta:         "—",
+      tenant:      "moderna",
+      holdCode:    null,
+      signedOff:   null,
+      deliveredAt: null,
+      notes:       notes || null,
+      requestedAt: now,
+    };
+    const store = getStore();
+    store.ships.push(newShip);
+    store.graphs[id] = buildHistory(product.minT, product.maxT);
+    const auditEntry = `[${id}] ORDER PLACED by Moderna @${ts()} → ${dest.label}`;
+    store.audit.push(auditEntry);
+    setShips(prev => [...prev, newShip]);
+    setGraphs(prev => ({ ...prev, [id]: store.graphs[id] }));
+    setAudit(prev => [...prev, auditEntry]);
+    setShowOrder(false);
+    setSelId(id);
+  }, []);
+
+  // Dispatch: Pfizer Admin approves with a chosen route → status → "In Transit"
+  const dispatchOrder = useCallback((id, chosenMode) => {
+    const updater = s => {
+      if (s.id !== id) return s;
+      const mode = chosenMode || goldenMode(s.cargo);
+      return { ...s, status: "In Transit", mode, eta: "Calculating…" };
+    };
+    const store = getStore();
+    store.ships = store.ships.map(updater);
+    const auditEntry = `[${id}] APPROVED & DISPATCHED @${ts()} via ${chosenMode || goldenMode(store.ships.find(s => s.id === id)?.cargo || "")}`;
+    store.audit.push(auditEntry);
+    // Sync React state
+    setShips(prev => prev.map(updater));
+    setAudit(prev => [...prev, auditEntry]);
+    setReviewId(null);
+    setSelId(id);
+  }, []);
+
+  const goTo = useCallback((id, v) => { setSelId(id); if (v) setView(v); }, []);
+  const nav  = useCallback((key) => { if (NAV.find(n => n.key === key)) setView(key); }, [NAV]);
+
+  if (!authed) return <Login onLogin={doLogin} />;
+
+  return (
+    <div className="flex flex-col h-screen w-screen overflow-hidden"
+      style={{
+        background: C.bg,
+        fontFamily: "'JetBrains Mono','Fira Code',monospace",
+        color: "#94a3b8",
+        animation: crisisOn && canOp ? "cn-outer-crisis 1.5s ease-in-out infinite" : "none",
+      }}>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        *, *::before, *::after { box-sizing: border-box; }
+        ::-webkit-scrollbar { width: 3px; height: 3px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 2px; }
+        @keyframes cn-fade { from { opacity:0; transform:translateY(4px); } to { opacity:1; transform:none; } }
+        @keyframes cn-outer-crisis {
+          0%,100% { box-shadow: inset 0 0 0 2px #f8717112; }
+          50%     { box-shadow: inset 0 0 0 3px #f87171bb, 0 0 40px #f8717114; }
+        }
+        @keyframes cn-crisis-glow {
+          0%,100% { box-shadow: 0 0 55px #f8717120; }
+          50%     { box-shadow: 0 0 80px #f8717155; }
+        }
+        @keyframes cn-alert-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+        @keyframes cn-pulse { 0%,100% { opacity:1; } 50% { opacity:0.38; } }
+      `}</style>
+
+      {/* TOP BAR */}
+      <header className="flex items-center justify-between px-5 flex-shrink-0"
+        style={{ height: 50, background: C.surface, borderBottom: `1px solid ${crisisOn && canOp ? C.red : C.border}`, transition: "border-color .3s" }}>
+        <div className="flex items-center gap-2.5">
+          <Snowflake size={16} color={accent} />
+          <span className="font-black tracking-[0.16em] text-base font-mono" style={{ color: accent, textShadow: `0 0 18px ${accent}55` }}>CRYO-NEXUS</span>
+          <Chip label={profile.badge} color={accent} xs />
+          {isViewer && <Chip label="CLIENT PORTAL" color={C.muted} xs />}
+        </div>
+
+        {crisisOn && canOp && (
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold"
+            style={{ background: `${C.red}12`, border: `1px solid ${C.red}`, color: C.red, animation: "cn-alert-in .25s ease" }}>
+            <Dot color={C.red} sz={7} />
+            RED ALERT — {sysAlert.shipmentId}
+            <button onClick={() => goTo(sysAlert.shipmentId, "command")}
+              className="ml-1 px-2 py-0.5 rounded text-xs hover:opacity-75 transition-opacity"
+              style={{ background: `${C.red}22`, border: `1px solid ${C.red}` }}>VIEW</button>
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <Chip label={isViewer ? "CLIENT" : isAdmin ? "ADMIN" : "OPERATOR"} color={isViewer ? C.muted : isAdmin ? C.gold : C.cyan} xs />
+          <span className="text-xs hidden sm:block" style={{ color: C.muted }}>{profile.sub.split("·")[0].trim()}</span>
+          <button onClick={doLogout}
+            className="flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg border hover:text-slate-300 transition-colors"
+            style={{ borderColor: C.border, color: C.muted }}>
+            <LogOut size={11} /> Logout
+          </button>
+        </div>
+      </header>
+
+      {/* BODY */}
+      <div className="flex flex-1 overflow-hidden">
+
+        {/* SIDEBAR */}
+        <aside className="flex flex-col flex-shrink-0 overflow-y-auto"
+          style={{ width: 208, background: C.surface, borderRight: `1px solid ${C.border}` }}>
+          <div className="px-4 py-3 border-b" style={{ borderColor: C.border }}>
+            <div className="text-xs tracking-widest mb-1" style={{ color: C.dim }}>NAVIGATION</div>
+            <div className="text-xs" style={{ color: "#64748b" }}>{profile.label}</div>
+          </div>
+          <nav className="py-2 flex-1">
+            {NAV.map(({ key, label, Icon }) => {
+              const active = view === key;
+              return (
+                <div key={key} onClick={() => nav(key)}
+                  className="flex items-center gap-2.5 px-4 py-2.5 cursor-pointer text-xs uppercase tracking-widest transition-all duration-150 select-none"
+                  style={{ color: active ? accent : C.muted, background: active ? `${accent}10` : "transparent", borderLeft: active ? `2px solid ${accent}` : "2px solid transparent" }}>
+                  <Icon size={12} />
+                  <span>{label}</span>
+                  {key === "shipments" && crisisOn && canOp && <span className="ml-auto text-xs font-bold" style={{ color: C.red }}>!</span>}
+                  {key === "command" && isAdmin && ships.filter(isPending).length > 0 && (
+                    <span className="ml-auto text-xs font-bold px-1 rounded"
+                      style={{ background: "#f59e0b22", color: "#f59e0b", fontSize: 9 }}>
+                      {ships.filter(isPending).length}
+                    </span>
+                  )}
+                  {key === "compliance" && isAdmin && <Chip label="ADMIN" color={C.gold} xs />}
+                </div>
+              );
+            })}
+          </nav>
+          <div className="px-4 py-3 border-t" style={{ borderColor: C.border }}>
+            <div className="text-xs tracking-widest mb-2" style={{ color: C.dim }}>QUICK SELECT</div>
+            {visible.map(s => {
+              const col = s.id === sysAlert?.shipmentId ? C.red : isDone(s) ? C.dim : isPending(s) ? C.muted : s.status === "On Hold" ? C.amber : accent;
+              return (
+                <div key={s.id} onClick={() => goTo(s.id, isViewer ? "tracking" : "command")}
+                  className="flex items-center gap-2 py-1.5 cursor-pointer">
+                  <Dot color={col} sz={6} />
+                  <span className="text-xs flex-1 truncate" style={{ color: s.id === selId ? accent : C.muted }}>{s.id}</span>
+                  {isDone(s) && <CheckCircle size={9} color={C.green} />}
+                  {s.id === sysAlert?.shipmentId && <AlertTriangle size={9} color={C.red} />}
+                  {isPending(s) && <Clock size={9} color={C.muted} />}
+                  {s.status === "On Hold" && s.id !== sysAlert?.shipmentId && !isPending(s) && <Clock size={9} color={C.amber} />}
+                </div>
+              );
+            })}
+          </div>
+        </aside>
+
+        {/* MAIN */}
+        <main className="flex flex-col flex-1 overflow-hidden">
+          {/* HUD strip */}
+          <div className="flex gap-2 px-5 py-2 flex-shrink-0 flex-wrap"
+            style={{ background: crisisOn && canOp ? `${C.red}06` : C.surface, borderBottom: `1px solid ${crisisOn && canOp ? C.red : C.border}`, transition: "all .4s" }}>
+            {[
+              { lbl: "ACTIVE",  val: visible.filter(isActive).length, color: accent },
+              ...(canOp ? [{ lbl: "ALERTS", val: crisisOn ? 1 : 0, color: crisisOn ? C.red : C.green }] : []),
+              ...(canOp ? [{ lbl: "PENDING", val: ships.filter(isPending).length, color: ships.filter(isPending).length > 0 ? C.amber : C.muted }] : []),
+              { lbl: "SENSORS", val: visible.length * 3, color: accent },
+              { lbl: "ROLE", val: isViewer ? "CLIENT" : isAdmin ? "ADMIN" : "OPS", color: isViewer ? C.muted : isAdmin ? C.gold : accent },
+            ].map(({ lbl, val, color }) => (
+              <div key={lbl} className="rounded-lg px-3 py-1.5" style={{ background: C.panel, border: `1px solid ${color}28`, minWidth: 76 }}>
+                <div style={{ color: C.dim, fontSize: 8, letterSpacing: "0.1em", marginBottom: 2 }}>{lbl}</div>
+                <div className="font-bold font-mono" style={{ fontSize: typeof val === "string" && val.length > 5 ? 10 : 15, color }}>{val}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* VIEW ROUTER — SECURITY BOUNDARY */}
+          <div className="flex flex-1 overflow-hidden">
+
+            {/* COMMAND CENTER — Pfizer only; NEVER mounts for Viewer */}
+            {!isViewer && view === "command" && (
+              <div className="flex flex-1 overflow-hidden" style={{ animation: "cn-fade .22s ease" }}>
+                <div className="overflow-y-auto p-4 flex-shrink-0" style={{ width: 284, borderRight: `1px solid ${C.border}` }}>
+                  <Head label="Global IoT Map" accent={accent} />
+                  <WorldMap ships={visible.filter(s => !isPending(s))} selId={selId} onSel={setSelId} crisisId={sysAlert?.shipmentId} accent={accent} />
+                  <PendingRequestsPanel ships={ships} onReview={setReviewId} accent={accent} />
+                  <div className="mt-4">
+                    <Head label="All Shipments" accent={accent} />
+                    {ships.filter(s => !isPending(s)).map(s => {
+                      const col = s.id === sysAlert?.shipmentId ? C.red : isDone(s) ? C.green : s.status === "On Hold" ? C.amber : accent;
+                      return (
+                        <div key={s.id} onClick={() => setSelId(s.id)}
+                          className="flex items-center gap-2 p-2.5 rounded-xl mb-1.5 cursor-pointer transition-all duration-150"
+                          style={{ background: selId === s.id ? `${accent}0f` : C.panel, border: `1px solid ${selId === s.id ? accent : s.id === sysAlert?.shipmentId ? C.red : C.border}` }}>
+                          <Dot color={col} sz={6} />
+                          <div className="flex-1 min-w-0">
+                            <div className="text-xs font-bold text-slate-100 truncate">{s.id}</div>
+                            <div className="text-xs truncate" style={{ color: C.muted }}>{s.cargo.split("(")[0].trim()}</div>
+                          </div>
+                          <Chip label={s.id === sysAlert?.shipmentId ? "CRISIS" : s.status} color={col} xs />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+                <ShipDetail ship={selShip} graphs={graphs} audit={audit}
+                  crisisId={sysAlert?.shipmentId} accent={accent}
+                  isAdmin={isAdmin} isViewer={false} canOp={canOp}
+                  onCrisis={triggerCrisis} onResolve={resolveCrisis}
+                  onPassport={setPassId} onLog={logHold} alert={sysAlert} />
+              </div>
+            )}
+
+            {/* SHIPMENTS LIST — Pfizer only */}
+            {!isViewer && view === "shipments" && (
+              <div className="flex-1 p-6 overflow-y-auto" style={{ animation: "cn-fade .22s ease" }}>
+                <Head label="Global Supply Chain Overview" accent={accent} />
+                <p className="text-xs mb-4" style={{ color: C.muted }}>
+                  {ships.length} total · {ships.filter(isActive).length} active · {ships.filter(isDone).length} delivered
+                </p>
+                {ships.map(s => {
+                  const col = s.id === sysAlert?.shipmentId ? C.red : isDone(s) ? C.green : isPending(s) ? C.muted : s.status === "On Hold" ? C.amber : accent;
+                  return (
+                    <div key={s.id} onClick={() => goTo(s.id, "command")}
+                      className="rounded-xl p-4 mb-2 cursor-pointer transition-all duration-200"
+                      style={{ background: C.panel, border: `1px solid ${selId === s.id ? accent : s.id === sysAlert?.shipmentId ? C.red : C.border}` }}>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Dot color={col} sz={6} />
+                        <span className="text-sm font-bold text-slate-100 flex-1">{s.id}</span>
+                        <Chip label={s.id === sysAlert?.shipmentId ? "⚠ CRISIS" : s.status} color={col} xs />
+                      </div>
+                      <div className="flex gap-4 text-xs pl-4 flex-wrap" style={{ color: C.muted }}>
+                        <span>📦 <b className="text-slate-300">{s.cargo.split("(")[0].trim()}</b></span>
+                        <span>{s.mode}</span>
+                        <span>{isDone(s) ? <span style={{ color: C.green }}>✓ Delivered</span> : `ETA: ${s.eta}`}</span>
+                        <span style={{ color: C.dim }}>→ {s.tenant === "moderna" ? "Moderna" : "Internal"}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* ROUTE MARKETPLACE — Pfizer only; NEVER mounts for Viewer */}
+            {!isViewer && view === "routes" && (
+              <Marketplace accent={accent} selMode={routeMode} onMode={setRouteMode} selShip={selShip} />
+            )}
+
+            {/* CLIENT TRACKING — Moderna Viewer ONLY */}
+            {isViewer && view === "tracking" && (
+              <div className="flex flex-1 overflow-hidden" style={{ animation: "cn-fade .22s ease" }}>
+                <div className="overflow-y-auto p-4 flex-shrink-0" style={{ width: 268, borderRight: `1px solid ${C.border}` }}>
+                  <Head label="Your Shipments" accent={accent}
+                    right={
+                      <button onClick={() => setShowOrder(true)}
+                        className="flex items-center gap-1.5 text-xs font-bold px-2.5 py-1.5 rounded-lg hover:opacity-80 transition-opacity"
+                        style={{ background: `linear-gradient(135deg, ${accent}, #0ea5e9)`, color: "#05080f" }}>
+                        + New Request
+                      </button>
+                    } />
+                  <div className="rounded-lg p-2.5 mb-3 text-xs"
+                    style={{ background: `${C.emerald}0c`, border: `1px solid ${C.emerald}28`, color: C.emerald }}>
+                    <Shield size={10} className="inline mr-1.5" />
+                    Monitored under Pfizer Supplier Agreement
+                  </div>
+                  {visible.map(s => {
+                    const col = isDone(s) ? C.green : isPending(s) ? C.muted : s.status === "On Hold" ? C.amber : accent;
+                    return (
+                      <div key={s.id} onClick={() => setSelId(s.id)}
+                        className="rounded-xl p-3 mb-2 cursor-pointer transition-all duration-150"
+                        style={{ background: selId === s.id ? `${isPending(s) ? C.muted : accent}0f` : C.panel, border: `1px solid ${selId === s.id ? (isPending(s) ? C.muted : accent) : C.border}` }}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <Dot color={isDone(s) ? C.dim : col} sz={6} />
+                          <span className="text-xs font-bold text-slate-100 flex-1">{s.id}</span>
+                          <Chip label={s.status} color={col} xs />
+                        </div>
+                        <div className="text-xs truncate pl-3.5 mb-1" style={{ color: C.muted }}>{s.cargo.split("(")[0].trim()}</div>
+                        {isPending(s) && (
+                          <div className="flex items-center gap-1 text-xs pl-3.5 mt-1" style={{ color: C.muted }}>
+                            <Clock size={9} />
+                            <span>Awaiting Pfizer approval</span>
+                          </div>
+                        )}
+                        {s.signedOff && (
+                          <div className="flex items-center gap-1 text-xs pl-3.5 mt-1" style={{ color: C.green }}>
+                            <CheckCircle size={9} />
+                            <span>Pfizer confirmed · {s.signedOff.by}</span>
+                          </div>
+                        )}
+                        {s.status === "On Hold" && (
+                          <div className="flex items-center gap-1 text-xs pl-3.5 mt-1" style={{ color: C.amber }}>
+                            <Clock size={9} />
+                            <span>Action: Pfizer Team Resolving</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+                <ShipDetail ship={selShip} graphs={graphs} audit={audit}
+                  crisisId={null} accent={accent}
+                  isAdmin={false} isViewer={true} canOp={false}
+                  onCrisis={() => {}} onResolve={() => {}}
+                  onPassport={setPassId} onLog={() => {}} alert={null} />
+              </div>
+            )}
+
+            {/* COMPLIANCE VAULT — both tenants */}
+            {view === "compliance" && (
+              <div className="flex-1 p-6 overflow-y-auto max-w-3xl" style={{ animation: "cn-fade .22s ease" }}>
+                <Head label="Compliance Vault" accent={isAdmin ? C.gold : accent} />
+                {isAdmin && (
+                  <div className="mb-4 p-3 rounded-xl text-xs" style={{ background: `${C.gold}0c`, border: `1px solid ${C.gold}28` }}>
+                    <span className="font-bold" style={{ color: C.gold }}>ADMIN</span>
+                    <span className="ml-2" style={{ color: C.muted }}>Sign-off authority active · {audit.length} session events logged</span>
+                  </div>
+                )}
+                {isViewer && (
+                  <div className="mb-4 p-3 rounded-xl text-xs" style={{ background: `${C.emerald}0c`, border: `1px solid ${C.emerald}28`, color: C.emerald }}>
+                    <Eye size={10} className="inline mr-1.5" />
+                    Showing compliance documents for Moderna-assigned shipments.
+                  </div>
+                )}
+                {(isViewer ? visible : ships).map(s => (
+                  <div key={s.id} className="rounded-xl p-4 mb-3"
+                    style={{ background: C.panel, border: `1px solid ${isDone(s) ? (isAdmin ? `${C.gold}33` : `${accent}33`) : C.border}` }}>
+                    <div className="flex justify-between items-start mb-2 gap-3 flex-wrap">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1 flex-wrap">
+                          <span className="text-sm font-bold text-slate-100">{s.id}</span>
+                          <Chip label={s.status} color={isDone(s) ? C.green : isPending(s) ? C.muted : s.status === "On Hold" ? C.amber : accent} xs />
+                          {s.signedOff && <Chip label="Passport Signed" color={C.green} xs />}
+                        </div>
+                        <div className="text-xs" style={{ color: C.muted }}>{s.cargo} · {s.origin} → {s.dest}</div>
+                      </div>
+                      {isAdmin && isDone(s) && (
+                        <button onClick={() => setPassId(s.id)}
+                          className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-75 transition-opacity flex-shrink-0"
+                          style={{ background: C.gold, color: C.bg }}>
+                          <FileText size={11} /> {s.signedOff ? "View Passport" : "Sign & Generate"}
+                        </button>
+                      )}
+                      {isViewer && isDone(s) && s.signedOff && (
+                        <button onClick={() => setPassId(s.id)}
+                          className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-lg hover:opacity-75 transition-opacity flex-shrink-0"
+                          style={{ background: accent, color: C.bg }}>
+                          <Eye size={11} /> View Passport
+                        </button>
+                      )}
+                      {isViewer && isDone(s) && !s.signedOff && (
+                        <span className="flex items-center gap-1.5 text-xs flex-shrink-0" style={{ color: C.muted }}>
+                          <Clock size={10} /> Awaiting supplier sign-off
+                        </span>
+                      )}
+                      {!isDone(s) && !isViewer && (
+                        <span className="text-xs" style={{ color: C.dim }}>Pending delivery</span>
+                      )}
+                    </div>
+                    {s.deliveredAt && (
+                      <div className="text-xs mt-1" style={{ color: C.green }}>
+                        ✓ Delivered {s.deliveredAt}{s.signedOff && ` · Signed: ${s.signedOff.by}`}
+                      </div>
+                    )}
+                    {s.signedOff && (
+                      <div className="text-xs mt-1.5 font-mono break-all" style={{ color: C.dim }}>
+                        SHA-256: {fakeHash(s.id + s.signedOff.by + s.signedOff.at + "cryo4").slice(0, 32)}…
+                      </div>
+                    )}
+                    {isAdmin && audit.filter(e => e.includes(s.id)).length > 0 && (
+                      <div className="mt-3 pt-2 border-t" style={{ borderColor: C.border }}>
+                        <div className="text-xs tracking-wider mb-1.5" style={{ color: C.dim }}>AUDIT LOG</div>
+                        {audit.filter(e => e.includes(s.id)).map((e, i) => (
+                          <div key={i} className="text-xs py-0.5" style={{ color: C.muted }}>
+                            <span style={{ color: C.gold }}>▶ </span>{e}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </main>
+      </div>
+
+      {/* FOOTER */}
+      <footer className="flex items-center justify-between px-5 flex-shrink-0"
+        style={{ height: 28, background: C.surface, borderTop: `1px solid ${C.border}` }}>
+        <div className="flex items-center gap-3 text-xs" style={{ color: C.dim }}>
+          <div className="flex items-center gap-1.5">
+            <Wifi size={9} color={C.green} />
+            <span style={{ color: C.green }}>Connected to Global IoT Mesh</span>
+          </div>
+          <span>·</span>
+          <div className="flex items-center gap-1.5">
+            <Zap size={9} color={C.cyan} />
+            <span>Latency: <b style={{ color: C.cyan }}>{latency}ms</b></span>
+          </div>
+          <span>·</span>
+          <div className="flex items-center gap-1.5" style={{ animation: "cn-pulse 2.2s ease-in-out infinite" }}>
+            <Activity size={9} color={C.amber} />
+            <span>System Pulse</span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 text-xs" style={{ color: C.dim }}>
+          <span>CRYO-NEXUS v4.0</span><span>·</span><span>ISO 21386</span><span>·</span>
+          <span style={{ color: C.emerald }}>ALL SYSTEMS NOMINAL</span>
+        </div>
+      </footer>
+
+      {/* PASSPORT MODAL */}
+      {passId && passShip && (
+        <PassportModal
+          ship={passShip} graphData={graphs[passId]} audit={audit}
+          onClose={() => setPassId(null)} accent={accent}
+          isAdmin={isAdmin} onSign={signDelivery} />
+      )}
+
+      {/* NEW ORDER MODAL — Moderna only */}
+      {showOrder && isViewer && (
+        <NewOrderModal
+          onClose={() => setShowOrder(false)}
+          onSubmit={submitOrder}
+          accent={accent} />
+      )}
+
+      {/* APPROVE & DISPATCH MODAL — Pfizer Admin only */}
+      {reviewId && isAdmin && (() => {
+        const reviewShip = ships.find(s => s.id === reviewId);
+        return reviewShip ? (
+          <ApproveDispatchModal
+            ship={reviewShip}
+            onClose={() => setReviewId(null)}
+            onDispatch={dispatchOrder}
+            accent={accent} />
+        ) : null;
+      })()}
+    </div>
+  );
+}
